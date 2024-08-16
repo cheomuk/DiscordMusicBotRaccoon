@@ -11,6 +11,7 @@ class Music(commands.Cog):
         self.bot = bot
         self.playlist = []  # 플레이리스트를 저장할 리스트
         self.current_song_index = 0  # 현재 재생 중인 노래의 인덱스
+        self.repeat = False  # 반복 재생 플래그
 
     @commands.command()
     async def join(self, ctx):
@@ -43,6 +44,12 @@ class Music(commands.Cog):
     def play_next(self, ctx):
         """ 다음 곡 재생 """
         
+        if self.repeat and ctx.voice_client.is_playing():
+            # 현재 곡 반복 재생
+            current_player = ctx.voice_client.source
+            ctx.voice_client.play(current_player, after=lambda e: self.play_next(ctx))
+            return
+        
         self.current_song_index += 1
         
         if self.current_song_index < len(self.playlist):
@@ -52,6 +59,13 @@ class Music(commands.Cog):
         else:
             self.current_song_index = 0  # 플레이리스트가 끝나면 처음으로 돌아감
             self.playlist.clear()   # 플레이리스트 초기화
+            
+    @commands.command()
+    async def repeat(self, ctx):
+        """Toggle repeat mode."""
+        self.repeat = not self.repeat
+        mode = "enabled" if self.repeat else "disabled"
+        await ctx.send(f'Repeat mode is now {mode}.')
 
     @commands.command()
     async def shuffle(self, ctx):

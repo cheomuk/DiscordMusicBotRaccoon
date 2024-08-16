@@ -33,10 +33,17 @@ class MusicControls(discord.ui.View):
         # Skip 버튼 클릭 시 실행되는 코드
         await self.music_cog.skip(interaction)
         await interaction.response.send_message("현재 곡이 건너뛰어졌습니다.")
+        
+    @discord.ui.button(label="Repeat", style=discord.ButtonStyle.primary)
+    async def repeat_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        """Toggle repeat mode."""
+        self.music_cog.repeat = not self.music_cog.repeat
+        mode = "활성화" if self.music_cog.repeat else "비활성화"
+        await interaction.response.send_message(f"반복 재생 모드가 {mode}되었습니다.")
 
     @discord.ui.button(label="Exit", style=discord.ButtonStyle.red)
-    async def stop_button(self, button: discord.ui.Button, interaction: discord.Interaction):
-        # Stop 버튼 클릭 시 실행되는 코드
+    async def exit_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        # exit 버튼 클릭 시 실행되는 코드
         await self.music_cog.exit(interaction)
         await interaction.response.send_message("음악이 중지되고, 봇이 음성 채널에서 나갔습니다.")
 
