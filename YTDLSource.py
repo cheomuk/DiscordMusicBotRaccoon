@@ -13,13 +13,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.url = data.get('url')
  
     @classmethod
-    async def from_url(cls, url, *, loop=None, stream=False, cookie_file=None):
-        loop = loop or asyncio.get_event_loop()
-        
-        # 쿠키 파일을 사용하는 경우 yt-dlp 옵션에 추가
-        if cookie_file:
-            ytdl.params['cookiefile'] = cookie_file
-        
+    async def from_url(cls, url, *, loop=None, stream=False):
+        loop = loop or asyncio.get_event_loop()  
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
  
         if 'entries' in data:

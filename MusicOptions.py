@@ -50,11 +50,9 @@ class Music(commands.Cog):
             await ctx.send("재생 목록 URL은 지원되지 않습니다. 개별 영상을 사용해주세요.", delete_after=10)
             return
 
-        cookie_path = '/home/ubuntu/cookies.txt'  # 쿠키 파일 경로
-
         async with ctx.typing():
             try:
-                player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True, cookie_file=cookie_path)
+                player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
                 self.playlist.append(player)  # 플레이리스트에 추가
 
                 # 플레이리스트에 추가된 곡이 하나밖에 없을 때만 새 곡을 재생
