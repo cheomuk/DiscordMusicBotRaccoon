@@ -13,8 +13,13 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.url = data.get('url')
  
     @classmethod
-    async def from_url(cls, url, *, loop=None, stream=False):
+    async def from_url(cls, url, *, loop=None, stream=False, cookie_file=None):
         loop = loop or asyncio.get_event_loop()
+        
+        # 쿠키 파일을 사용하는 경우 yt-dlp 옵션에 추가
+        if cookie_file:
+            ytdl.params['cookiefile'] = cookie_file
+        
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
  
         if 'entries' in data:
@@ -28,7 +33,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
 youtube_dl.utils.bug_reports_message = lambda: ''
 
 ytdl_format_options = {
-    'format': 'bestaudio[abr>192]/bestaudio/best',
+    'format': 'bestaudio/best',
     'outtmpl': '%(title)s.%(ext)s',
     'restrictfilenames': True,
     'noplaylist': True,
@@ -38,7 +43,7 @@ ytdl_format_options = {
     'quiet': True,
     'no_warnings': True,
     'default_search': 'auto',
-    'source_address': '0.0.0.0',
+    'source_address': '0.0.0.0',  # ipv6 사용 중이라면 필요 없을 수 있습니다.
 }
 
 ffmpeg_options = {
