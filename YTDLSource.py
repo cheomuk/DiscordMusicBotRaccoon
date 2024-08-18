@@ -6,7 +6,7 @@ import yt_dlp as youtube_dl
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
         super().__init__(source, volume)
- 
+
         self.data = data
  
         self.title = data.get('title')
@@ -28,8 +28,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
 youtube_dl.utils.bug_reports_message = lambda: ''
 
 ytdl_format_options = {
-    'format': 'bestaudio/best',
-    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+    'format': 'bestaudio[abr>192]/bestaudio/best',
+    'outtmpl': '%(title)s.%(ext)s',
     'restrictfilenames': True,
     'noplaylist': True,
     'nocheckcertificate': True,
@@ -42,8 +42,8 @@ ytdl_format_options = {
 }
 
 ffmpeg_options = {
-    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-    'options': '-vn',
+    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -reconnect_at_eof 1',
+    'options': '-vn -b:a 192k',
 }
 
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)

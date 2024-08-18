@@ -1,64 +1,68 @@
 ﻿import discord
 from discord.ext import commands
-from MusicOptions import Music
+from dico_token import ID
 
 class MusicControls(discord.ui.View):
-    def __init__(self, bot: commands.Bot):
-        super().__init__()
+    def __init__(self, bot: commands.Bot, music_cog):
+        super().__init__(timeout=None)
         self.bot = bot
-        self.music_cog = self.bot.get_cog("Music")  # Music 클래스 인스턴스 가져오기
+        self.music_cog = music_cog
+        self.message = None  # UI 메시지를 참조하기 위한 변수
 
-    async def update_ui(self, title, thumbnail):
-        self.title = title
-        self.thumbnail = thumbnail
-        # UI 업데이트 로직
-        for item in self.children:
-            if isinstance(item, discord.ui.Button):
-                item.disabled = False  # 버튼 활성화 예시
-
-    @discord.ui.button(label="Pause", style=discord.ButtonStyle.blurple)
-    async def pause_button(self, button: discord.ui.Button, interaction: discord.Interaction):
-        # Pause 버튼 클릭 시 실행되는 코드
-        await self.music_cog.pause(interaction)
-        await interaction.response.send_message("음악이 일시 정지되었습니다.")
-
-    @discord.ui.button(label="Resume", style=discord.ButtonStyle.blurple)
-    async def resume_button(self, button: discord.ui.Button, interaction: discord.Interaction):
-        # Resume 버튼 클릭 시 실행되는 코드
-        await self.music_cog.resume(interaction)
-        await interaction.response.send_message("음악이 재생되었습니다.")
-        
-    @discord.ui.button(label="Skip", style=discord.ButtonStyle.green)
-    async def skip_button(self, button: discord.ui.Button, interaction: discord.Interaction):
-        # Skip 버튼 클릭 시 실행되는 코드
-        await self.music_cog.skip(interaction)
-        await interaction.response.send_message("현재 곡이 건너뛰어졌습니다.")
-        
-    @discord.ui.button(label="Repeat", style=discord.ButtonStyle.primary)
-    async def repeat_button(self, button: discord.ui.Button, interaction: discord.Interaction):
-        """Toggle repeat mode."""
-        self.music_cog.repeat = not self.music_cog.repeat
-        mode = "활성화" if self.music_cog.repeat else "비활성화"
-        await interaction.response.send_message(f"반복 재생 모드가 {mode}되었습니다.")
-
-    @discord.ui.button(label="Exit", style=discord.ButtonStyle.red)
-    async def exit_button(self, button: discord.ui.Button, interaction: discord.Interaction):
-        # exit 버튼 클릭 시 실행되는 코드
-        await self.music_cog.exit(interaction)
-        await interaction.response.send_message("음악이 중지되고, 봇이 음성 채널에서 나갔습니다.")
-
-    @discord.ui.button(label="Shuffle", style=discord.ButtonStyle.secondary)
-    async def shuffle_button(self, button: discord.ui.Button, interaction: discord.Interaction):
-        # Shuffle 버튼 클릭 시 실행되는 코드
-        await self.music_cog.shuffle(interaction)
-        await interaction.response.send_message("플레이리스트가 셔플되었습니다.")
-
-    @discord.ui.button(label="Show Playlist", style=discord.ButtonStyle.secondary)
-    async def playlist_button(self, button: discord.ui.Button, interaction: discord.Interaction):
-        # Show Playlist 버튼 클릭 시 실행되는 코드
-        playlist = self.music_cog.playlist  # 현재 플레이리스트 가져오기
-        if not playlist:
-            await interaction.response.send_message("현재 플레이리스트가 비어 있습니다.")
+    async def execute_command(self, interaction: discord.Interaction, command_name: str):
+        command = self.bot.get_command(command_name)
+        if command:
+            ctx = await self.bot.get_context(interaction.message)
+            ctx.interaction = interaction
+            response_message = await ctx.invoke(command)
+            if response_message:
+                await response_message.delete(delay=5)  # 응답 메시지를 5초 후에 삭제
         else:
-            playlist_titles = [song.title for song in playlist]
-            await interaction.response.send_message("현재 플레이리스트:\n" + "\n".join(playlist_titles))
+            await interaction.response.send_message(f"Command `{command_name}` not found.", ephemeral=True)
+            
+    async def update_ui(self, title: str = None):
+        """UI를 현재 재생 중인 음악의 제목과 썸네일로 업데이트"""
+        embed = discord.Embed(
+            title=title if title else "현재 재생 중인 곡이 없습니다.",
+            color=discord.Color.blue()
+        )
+
+        if self.message:
+            await self.message.edit(embed=embed)
+        else:
+            channel = self.bot.get_channel(ID)
+            self.message = await channel.send(embed=embed, view=self)
+
+
+    @discord.ui.button(label="스킵", emoji="⏩", style=discord.ButtonStyle.secondary)
+    async def skip(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.execute_command(interaction, "s")
+
+    @discord.ui.button(label="일시 정지", emoji="⏸️", style=discord.ButtonStyle.secondary)
+    async def pause(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.execute_command(interaction, "ps")
+
+    @discord.ui.button(label="재생", emoji="▶️", style=discord.ButtonStyle.secondary)
+    async def resume(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.execute_command(interaction, "rs")
+        
+    @discord.ui.button(label="반복 재생", emoji="🔁", style=discord.ButtonStyle.secondary)
+    async def repeat(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.execute_command(interaction, "r")
+        
+    @discord.ui.button(label="이전 재생", emoji="⏮️", style=discord.ButtonStyle.secondary)
+    async def previous(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.execute_command(interaction, "b")
+
+    @discord.ui.button(label="셔플", emoji="🔀", style=discord.ButtonStyle.secondary)
+    async def shuffle(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.execute_command(interaction, "sh")
+        
+    @discord.ui.button(label="Playlist", emoji="📜", style=discord.ButtonStyle.secondary)
+    async def playlist(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        await self.execute_command(interaction, "pl")
+        
+    @discord.ui.button(label="Help", emoji="❓", style=discord.ButtonStyle.secondary)
+    async def help_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.execute_command(interaction, "h")
