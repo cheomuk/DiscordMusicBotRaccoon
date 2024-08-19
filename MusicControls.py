@@ -3,11 +3,32 @@ from discord.ext import commands
 from dico_token import ID
 
 class MusicControls(discord.ui.View):
-    def __init__(self, bot: commands.Bot, music_cog):
+    def __init__(self, bot, music_cog):
         super().__init__(timeout=None)
         self.bot = bot
         self.music_cog = music_cog
-        self.message = None  # UI 메시지를 참조하기 위한 변수
+        self.message = None
+
+    async def update_ui(self, title: str = None):
+        """UI를 현재 재생 중인 음악의 제목과 썸네일로 업데이트"""
+        embed = discord.Embed(
+            title=title if title else "현재 재생 중인 곡이 없습니다.",
+            color=discord.Color.blue()
+        )
+
+        if self.message:
+            await self.message.edit(embed=embed, view=self)
+        else:
+            channel = self.bot.get_channel(self.music_cog.channel_id)
+            self.message = await channel.send(embed=embed, view=self)
+
+    async def send_initial_ui(self, channel):
+        """초기 UI 전송"""
+        embed = discord.Embed(
+            title="Ready to play music.",
+            color=discord.Color.blue()
+        )
+        self.message = await channel.send(embed=embed, view=self)
 
     async def execute_command(self, interaction: discord.Interaction, command_name: str):
         command = self.bot.get_command(command_name)
@@ -19,20 +40,6 @@ class MusicControls(discord.ui.View):
                 await response_message.delete(delay=5)  # 응답 메시지를 5초 후에 삭제
         else:
             await interaction.response.send_message(f"Command `{command_name}` not found.", ephemeral=True)
-            
-    async def update_ui(self, title: str = None):
-        """UI를 현재 재생 중인 음악의 제목과 썸네일로 업데이트"""
-        embed = discord.Embed(
-            title=title if title else "현재 재생 중인 곡이 없습니다.",
-            color=discord.Color.blue()
-        )
-
-        if self.message:
-            await self.message.edit(embed=embed)
-        else:
-            channel = self.bot.get_channel(ID)
-            self.message = await channel.send(embed=embed, view=self)
-
 
     @discord.ui.button(label="스킵", emoji="⏩", style=discord.ButtonStyle.secondary)
     async def skip(self, interaction: discord.Interaction, button: discord.ui.Button):

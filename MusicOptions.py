@@ -69,34 +69,34 @@ class Music(commands.Cog):
             player = self.playlist[self.current_song_index]
             ctx.voice_client.play(player, after=lambda e: self.bot.loop.create_task(self.play_next(ctx)))
             
-            if self.bot_channel:
-                await self.bot_channel.update_ui(player.title)
+            bot_channel_cog = self.bot.get_cog('BotChannel')
+            if bot_channel_cog:
+                await bot_channel_cog.update_ui(player.title)
+
             await ctx.send(f'Now playing: {player.title}', delete_after=5)
         else:
-            if self.bot_channel:
-                await self.bot_channel.update_ui("현재 재생 중인 곡이 없습니다.")
+            bot_channel_cog = self.bot.get_cog('BotChannel')
+            if bot_channel_cog:
+                await bot_channel_cog.update_ui("현재 재생 중인 곡이 없습니다.")
 
 
     async def play_next(self, ctx):
-        """ 다음 곡 재생 """
-        if self.repeat and ctx.voice_client and ctx.voice_client.is_playing():
-            # 현재 곡 반복 재생
-            current_player = ctx.voice_client.source
-            ctx.voice_client.play(current_player, after=lambda e: self.bot.loop.create_task(self.play_next(ctx)))
-            return
-        
-        # 현재 재생 중인 곡을 플레이리스트에서 제거
-        if self.playlist:
-            self.playlist.pop(self.current_song_index)
+        """다음 곡을 재생"""
+        if self.repeat:
+            self.current_song_index = self.current_song_index
+        else:
+            self.current_song_index += 1
 
-        # 다음 곡 재생 또는 플레이리스트 끝
         if self.current_song_index < len(self.playlist):
             await self.start_playing(ctx)
         else:
-            self.current_song_index = 0  # 플레이리스트가 끝나면 처음으로 돌아감
-            self.playlist.clear()  # 플레이리스트 초기화
-            if self.bot_channel:
-                await self.bot_channel.update_ui("현재 재생 중인 곡이 없습니다.")
+            # 모든 곡이 재생된 후 플레이리스트 비움
+            self.current_song_index = 0
+            self.playlist.clear()
+            bot_channel_cog = self.bot.get_cog('BotChannel')
+            if bot_channel_cog:
+                await bot_channel_cog.update_ui("현재 재생 중인 곡이 없습니다.")
+            await ctx.send("플레이리스트가 모두 재생되었습니다.", delete_after=10)
 
     @commands.command(name='b')
     async def previous(self, ctx):
